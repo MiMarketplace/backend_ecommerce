@@ -1,0 +1,570 @@
+{
+	"NestJS Controller": {
+		"prefix": "nestjs-controller",
+		"body": [
+			"import { Controller, Get } from '@nestjs/common';",
+			"",
+			"@Controller('$1')",
+			"export class $2Controller {",
+			"  @Get()",
+			"  findAll(): string {",
+			"    return '$3';",
+			"  }",
+			"}"
+		],
+		"description": "Crea un controlador básico de NestJS"
+	},
+
+	"NestJS Controller CRUD": {
+		"prefix": "nestjs-controller-crud",
+		"body": [
+			"import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';",
+			"",
+			"@Controller('$1')",
+			"export class $2Controller {",
+			"  constructor(private readonly $3Service: $3Service) {}",
+			"",
+			"  @Post()",
+			"  create(@Body() create$4Dto: Create$4Dto) {",
+			"    return this.$3Service.create(create$4Dto);",
+			"  }",
+			"",
+			"  @Get()",
+			"  findAll(@Query() query: any) {",
+			"    return this.$3Service.findAll(query);",
+			"  }",
+			"",
+			"  @Get(':id')",
+			"  findOne(@Param('id') id: string) {",
+			"    return this.$3Service.findOne(+id);",
+			"  }",
+			"",
+			"  @Patch(':id')",
+			"  update(@Param('id') id: string, @Body() update$4Dto: Update$4Dto) {",
+			"    return this.$3Service.update(+id, update$4Dto);",
+			"  }",
+			"",
+			"  @Delete(':id')",
+			"  remove(@Param('id') id: string) {",
+			"    return this.$3Service.remove(+id);",
+			"  }",
+			"}"
+		],
+		"description": "Controlador con rutas CRUD estándar"
+	},
+
+	"NestJS Service": {
+		"prefix": "nestjs-service",
+		"body": [
+			"import { Injectable } from '@nestjs/common';",
+			"",
+			"@Injectable()",
+			"export class $1Service {",
+			"  getHello(): string {",
+			"    return '$2';",
+			"  }",
+			"}"
+		],
+		"description": "Crea un servicio básico de NestJS"
+	},
+
+	"NestJS Service CRUD": {
+		"prefix": "nestjs-service-crud",
+		"body": [
+			"import { Injectable } from '@nestjs/common';",
+			"",
+			"@Injectable()",
+			"export class $1Service {",
+			"  create(create$2Dto: Create$2Dto) {",
+			"    return { message: '$2 creado' };",
+			"  }",
+			"  findAll(query?: any) {",
+			"    return [];",
+			"  }",
+			"  findOne(id: number) {",
+			"    return { id };",
+			"  }",
+			"  update(id: number, update$2Dto: Update$2Dto) {",
+			"    return { id, ...update$2Dto };",
+			"  }",
+			"  remove(id: number) {",
+			"    return { deleted: true, id };",
+			"  }",
+			"}"
+		],
+		"description": "Servicio con métodos CRUD base"
+	},
+
+	"NestJS Module": {
+		"prefix": "nestjs-module",
+		"body": [
+			"import { Module } from '@nestjs/common';",
+			"import { $1Controller } from './$1.controller';",
+			"import { $1Service } from './$1.service';",
+			"",
+			"@Module({",
+			"  controllers: [$1Controller],",
+			"  providers: [$1Service],",
+			"  exports: [$1Service],",
+			"})",
+			"export class $1Module {}"
+		],
+		"description": "Crea un módulo básico de NestJS"
+	},
+
+	"NestJS Resource Trio (Controller+Service+Module)": {
+		"prefix": "nestjs-resource",
+		"body": [
+			"// Controller: $1.controller.ts",
+			"import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';",
+			"@Controller('$2')",
+			"export class $1Controller {",
+			"  constructor(private readonly $1Service: $1Service) {}",
+			"  @Post() create(@Body() dto: Create$3Dto) { return this.$1Service.create(dto); }",
+			"  @Get() findAll(@Query() q: any) { return this.$1Service.findAll(q); }",
+			"  @Get(':id') findOne(@Param('id') id: string) { return this.$1Service.findOne(+id); }",
+			"  @Patch(':id') update(@Param('id') id: string, @Body() dto: Update$3Dto) { return this.$1Service.update(+id, dto); }",
+			"  @Delete(':id') remove(@Param('id') id: string) { return this.$1Service.remove(+id); }",
+			"}",
+			"",
+			"// Service: $1.service.ts",
+			"import { Injectable } from '@nestjs/common';",
+			"@Injectable()",
+			"export class $1Service { create(dto: Create$3Dto) { return dto; } findAll(q?: any) { return []; } findOne(id: number) { return { id }; } update(id: number, dto: Update$3Dto) { return { id, ...dto }; } remove(id: number) { return { deleted: true, id }; } }",
+			"",
+			"// Module: $1.module.ts",
+			"import { Module } from '@nestjs/common';",
+			"import { $1Controller } from './$1.controller';",
+			"import { $1Service } from './$1.service';",
+			"@Module({ controllers: [$1Controller], providers: [$1Service], exports: [$1Service] })",
+			"export class $1Module {}"
+		],
+		"description": "Esqueleto rápido de recurso (controller, service, module)"
+	},
+
+	"NestJS DTO": {
+		"prefix": "nestjs-dto",
+		"body": [
+			"export class $1Dto {",
+			"  readonly $2: string;",
+			"}"
+		],
+		"description": "Crea un DTO básico de NestJS"
+	},
+
+	"NestJS DTO con Validación": {
+		"prefix": "nestjs-dto-validated",
+		"body": [
+			"import { ApiProperty } from '@nestjs/swagger';",
+			"import { IsString, IsOptional, IsInt, Min, IsBoolean } from 'class-validator';",
+			"",
+			"export class $1Dto {",
+			"  @ApiProperty({ description: '$2' })",
+			"  @IsString()",
+			"  name: string;",
+			"",
+			"  @ApiProperty({ required: false })",
+			"  @IsOptional()",
+			"  @IsInt()",
+			"  @Min(0)",
+			"  count?: number;",
+			"",
+			"  @ApiProperty({ required: false })",
+			"  @IsOptional()",
+			"  @IsBoolean()",
+			"  active?: boolean;",
+			"}"
+		],
+		"description": "DTO con class-validator y @nestjs/swagger"
+	},
+
+	"NestJS Guard": {
+		"prefix": "nestjs-guard",
+		"body": [
+			"import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';",
+			"import { Observable } from 'rxjs';",
+			"",
+			"@Injectable()",
+			"export class $1Guard implements CanActivate {",
+			"  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {",
+			"    const request = context.switchToHttp().getRequest();",
+			"    // Lógica de autorización",
+			"    return true;",
+			"  }",
+			"}"
+		],
+		"description": "Crea un guard básico de NestJS"
+	},
+
+	"NestJS Interceptor": {
+		"prefix": "nestjs-interceptor",
+		"body": [
+			"import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';",
+			"import { Observable } from 'rxjs';",
+			"import { map } from 'rxjs/operators';",
+			"",
+			"@Injectable()",
+			"export class $1Interceptor implements NestInterceptor {",
+			"  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {",
+			"    return next.handle().pipe(map((data) => ({ data })));",
+			"  }",
+			"}"
+		],
+		"description": "Crea un interceptor básico"
+	},
+
+	"NestJS Pipe": {
+		"prefix": "nestjs-pipe",
+		"body": [
+			"import { ArgumentMetadata, Injectable, PipeTransform, BadRequestException } from '@nestjs/common';",
+			"",
+			"@Injectable()",
+			"export class $1Pipe implements PipeTransform {",
+			"  transform(value: any, metadata: ArgumentMetadata) {",
+			"    // Validación/transformación",
+			"    if (value == null) throw new BadRequestException('$2');",
+			"    return value;",
+			"  }",
+			"}"
+		],
+		"description": "Crea un pipe básico"
+	},
+
+	"NestJS Exception Filter": {
+		"prefix": "nestjs-filter",
+		"body": [
+			"import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';",
+			"",
+			"@Catch()",
+			"export class $1Filter implements ExceptionFilter {",
+			"  catch(exception: unknown, host: ArgumentsHost) {",
+			"    const ctx = host.switchToHttp();",
+			"    const response = ctx.getResponse();",
+			"    const request = ctx.getRequest();",
+			"    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;",
+			"    response.status(status).json({",
+			"      statusCode: status,",
+			"      timestamp: new Date().toISOString(),",
+			"      path: request.url,",
+			"    });",
+			"  }",
+			"}"
+		],
+		"description": "Crea un exception filter básico"
+	},
+
+	"NestJS Middleware": {
+		"prefix": "nestjs-middleware",
+		"body": [
+			"import { Injectable, NestMiddleware } from '@nestjs/common';",
+			"import { Request, Response, NextFunction } from 'express';",
+			"",
+			"@Injectable()",
+			"export class $1Middleware implements NestMiddleware {",
+			"  use(req: Request, res: Response, next: NextFunction) {",
+			"    // Lógica de middleware",
+			"    next();",
+			"  }",
+			"}"
+		],
+		"description": "Crea un middleware básico"
+	},
+
+	"NestJS Custom Decorator": {
+		"prefix": "nestjs-decorator",
+		"body": [
+			"import { createParamDecorator, ExecutionContext } from '@nestjs/common';",
+			"",
+			"export const $1 = createParamDecorator((data: unknown, ctx: ExecutionContext) => {",
+			"  const request = ctx.switchToHttp().getRequest();",
+			"  return request.user;",
+			"});"
+		],
+		"description": "Crea un decorador personalizado de parámetro"
+	},
+
+	"NestJS Logger": {
+		"prefix": "nestjs-logger",
+		"body": [
+			"import { Logger } from '@nestjs/common';",
+			"",
+			"export class $1 {",
+			"  private readonly logger = new Logger($1.name);",
+			"  log(msg: string) { this.logger.log(msg); }",
+			"  error(err: any) { this.logger.error(err); }",
+			"}"
+		],
+		"description": "Snippet para usar Logger"
+	},
+
+	"NestJS Rutas: GET": {
+		"prefix": "nestjs-get",
+		"body": [
+			"@Get('$1')",
+			"$2(@Query() query: any) {",
+			"  return this.$3Service.$2(query);",
+			"}"
+		],
+		"description": "Ruta GET con Query"
+	},
+
+	"NestJS Rutas: GET by id": {
+		"prefix": "nestjs-get-id",
+		"body": [
+			"@Get(':id')",
+			"$1(@Param('id') id: string) {",
+			"  return this.$2Service.$1(+id);",
+			"}"
+		],
+		"description": "Ruta GET por id"
+	},
+
+	"NestJS Rutas: POST": {
+		"prefix": "nestjs-post",
+		"body": [
+			"@Post('$1')",
+			"$2(@Body() dto: $3) {",
+			"  return this.$4Service.$2(dto);",
+			"}"
+		],
+		"description": "Ruta POST con Body"
+	},
+
+	"NestJS Rutas: PATCH": {
+		"prefix": "nestjs-patch",
+		"body": [
+			"@Patch(':id')",
+			"$1(@Param('id', ParseIntPipe) id: number, @Body() dto: $2) {",
+			"  return this.$3Service.$1(id, dto);",
+			"}"
+		],
+		"description": "Ruta PATCH con ParseIntPipe"
+	},
+
+	"NestJS Rutas: DELETE": {
+		"prefix": "nestjs-delete",
+		"body": [
+			"@Delete(':id')",
+			"$1(@Param('id', ParseIntPipe) id: number) {",
+			"  return this.$2Service.$1(id);",
+			"}"
+		],
+		"description": "Ruta DELETE por id"
+	},
+
+	"NestJS Swagger Controller": {
+		"prefix": "nestjs-swagger-ctrl",
+		"body": [
+			"import { Controller, Get } from '@nestjs/common';",
+			"import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';",
+			"",
+			"@ApiTags('$1')",
+			"@Controller('$1')",
+			"export class $2Controller {",
+			"  @Get()",
+			"  @ApiOperation({ summary: 'Listar $1' })",
+			"  @ApiResponse({ status: 200, description: 'OK' })",
+			"  findAll() {",
+			"    return [];",
+			"  }",
+			"}"
+		],
+		"description": "Controlador con decoradores de Swagger"
+	},
+
+	"NestJS Swagger DTO": {
+		"prefix": "nestjs-swagger-dto",
+		"body": [
+			"import { ApiProperty } from '@nestjs/swagger';",
+			"import { IsString, IsOptional } from 'class-validator';",
+			"",
+			"export class $1Dto {",
+			"  @ApiProperty({ example: 'Nombre', description: 'Nombre del recurso' })",
+			"  @IsString()",
+			"  name: string;",
+			"",
+			"  @ApiProperty({ required: false })",
+			"  @IsOptional()",
+			"  description?: string;",
+			"}"
+		],
+		"description": "DTO con ApiProperty y validación"
+	},
+
+	"NestJS TypeORM Entity": {
+		"prefix": "nestjs-entity",
+		"body": [
+			"import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';",
+			"",
+			"@Entity({ name: '$1' })",
+			"export class $2 {",
+			"  @PrimaryGeneratedColumn()",
+			"  id: number;",
+			"",
+			"  @Column({ type: 'varchar', length: 255 })",
+			"  name: string;",
+			"",
+			"  @CreateDateColumn()",
+			"  createdAt: Date;",
+			"",
+			"  @UpdateDateColumn()",
+			"  updatedAt: Date;",
+			"}"
+		],
+		"description": "Entidad TypeORM básica"
+	},
+
+	"NestJS TypeORM Service with Repository": {
+		"prefix": "nestjs-typeorm-service",
+		"body": [
+			"import { Injectable } from '@nestjs/common';",
+			"import { InjectRepository } from '@nestjs/typeorm';",
+			"import { Repository } from 'typeorm';",
+			"import { $1 } from './$1.entity';",
+			"",
+			"@Injectable()",
+			"export class $1Service {",
+			"  constructor(@InjectRepository($1) private readonly repo: Repository<$1>) {}",
+			"  create(data: Partial<$1>) { return this.repo.save(this.repo.create(data)); }",
+			"  findAll() { return this.repo.find(); }",
+			"  findOne(id: number) { return this.repo.findOne({ where: { id } }); }",
+			"  async update(id: number, data: Partial<$1>) { await this.repo.update(id, data); return this.findOne(id); }",
+			"  async remove(id: number) { await this.repo.delete(id); return { deleted: true, id }; }",
+			"}"
+		],
+		"description": "Servicio usando TypeORM Repository"
+	},
+
+	"NestJS UseGuards": {
+		"prefix": "nestjs-useguards",
+		"body": [
+			"import { UseGuards } from '@nestjs/common';",
+			"@UseGuards($1Guard)",
+			"$2() {",
+			"  return this.$3Service.$2();",
+			"}"
+		],
+		"description": "Aplicar UseGuards en método"
+	},
+
+	"NestJS ParseInt Param": {
+		"prefix": "nestjs-parseint",
+		"body": [
+			"@Param('id', ParseIntPipe) id: number"
+		],
+		"description": "Usa ParseIntPipe para parámetros numéricos"
+	},
+
+	"NestJS Config Module": {
+		"prefix": "nestjs-config-module",
+		"body": [
+			"import { Module } from '@nestjs/common';",
+			"import { ConfigModule } from '@nestjs/config';",
+			"",
+			"@Module({",
+			"  imports: [",
+			"    ConfigModule.forRoot({",
+			"      isGlobal: true,",
+			"      envFilePath: ['.env', '.env.local'],",
+			"    }),",
+			"  ],",
+			"})",
+			"export class $1Module {}"
+		],
+		"description": "ConfigModule global"
+	},
+
+	"NestJS ENV Validation (Joi)": {
+		"prefix": "nestjs-env-joi",
+		"body": [
+			"import { Module } from '@nestjs/common';",
+			"import { ConfigModule } from '@nestjs/config';",
+			"import * as Joi from 'joi';",
+			"",
+			"@Module({",
+			"  imports: [",
+			"    ConfigModule.forRoot({",
+			"      isGlobal: true,",
+			"      validationSchema: Joi.object({",
+			"        PORT: Joi.number().default(3000),",
+			"        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),",
+			"      }),",
+			"    }),",
+			"  ],",
+			"})",
+			"export class $1Module {}"
+		],
+		"description": "Validación de variables de entorno con Joi"
+	},
+
+	"NestJS Bootstrap main.ts": {
+		"prefix": "nestjs-bootstrap",
+		"body": [
+			"import { NestFactory } from '@nestjs/core';",
+			"import { AppModule } from './app.module';",
+			"import { ValidationPipe } from '@nestjs/common';",
+			"import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';",
+			"",
+			"async function bootstrap() {",
+			"  const app = await NestFactory.create(AppModule);",
+			"  app.setGlobalPrefix('api');",
+			"  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));",
+			"",
+			"  const config = new DocumentBuilder()",
+			"    .setTitle('$1 API')",
+			"    .setDescription('API de $1')",
+			"    .setVersion('1.0')",
+			"    .build();",
+			"  const document = SwaggerModule.createDocument(app, config);",
+			"  SwaggerModule.setup('docs', app, document);",
+			"",
+			"  await app.listen(process.env.PORT || 3000);",
+			"}",
+			"bootstrap();"
+		],
+		"description": "main.ts con ValidationPipe y Swagger"
+	},
+
+	"NestJS Controller Method Template": {
+		"prefix": "nestjs-method",
+		"body": [
+			"@$1('$2')",
+			"$3(@$4('$5') $6: $7) {",
+			"  return this.$8Service.$3($6);",
+			"}"
+		],
+		"description": "Plantilla genérica de método de controlador"
+	},
+
+	"NestJS E2E Test": {
+		"prefix": "nestjs-e2e-test",
+		"body": [
+			"import { Test, TestingModule } from '@nestjs/testing';",
+			"import { INestApplication } from '@nestjs/common';",
+			"import * as request from 'supertest';",
+			"import { AppModule } from '../src/app.module';",
+			"",
+			"describe('$1 e2e', () => {",
+			"  let app: INestApplication;",
+			"",
+			"  beforeAll(async () => {",
+			"    const moduleFixture: TestingModule = await Test.createTestingModule({",
+			"      imports: [AppModule],",
+			"    }).compile();",
+			"",
+			"    app = moduleFixture.createNestApplication();",
+			"    await app.init();",
+			"  });",
+			"",
+			"  it('/GET $2', () => {",
+			"    return request(app.getHttpServer()).get('/$2').expect(200);",
+			"  });",
+			"",
+			"  afterAll(async () => {",
+			"    await app.close();",
+			"  });",
+			"});"
+		],
+		"description": "Plantilla básica de prueba e2e"
+	}
+}
