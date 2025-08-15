@@ -1,0 +1,341 @@
+Project backend_ecommerce {
+  database_type: "PostgreSQL"
+  note: 'Modelo exportado desde Prisma. Nombres de campos/tablas se mantienen en inglés; notas/documentación en español.'
+}
+
+Enum ProductStatus {
+  ACTIVE [note: 'Producto disponible para la venta']
+  INACTIVE [note: 'Producto deshabilitado/no visible']
+}
+
+Enum TransactionStatus {
+  PENDING [note: 'Transacción creada, pendiente de completar']
+  COMPLETED [note: 'Transacción completada con éxito']
+  CANCELLED [note: 'Transacción cancelada']
+}
+
+Enum DiscountType {
+  PERCENTAGE [note: 'Descuento en porcentaje']
+  FIXED [note: 'Descuento con monto fijo']
+}
+
+Enum NotificationType {
+  ORDER [note: 'Notificación relacionada a pedidos']
+  PRODUCT [note: 'Notificación relacionada a productos']
+  SYSTEM [note: 'Notificación del sistema']
+  PROMOTION [note: 'Notificación de promoción/oferta']
+}
+
+Table User {
+  id            int         [pk, increment, note: 'Identificador único del usuario']
+  name          varchar     [note: 'Nombre del usuario']
+  email         varchar     [unique, note: 'Correo electrónico del usuario (único)']
+  password      varchar     [note: 'Hash de la contraseña']
+  score         float       [default: 0, note: 'Puntaje/reputación del usuario']
+  emailVerified boolean     [default: false, note: 'Indica si el correo ha sido verificado']
+  roleId        int         [note: 'FK al rol del usuario']
+  createdAt     datetime    [default: `now()`, note: 'Fecha de creación del registro']
+  updatedAt     datetime    [note: 'Fecha de última actualización']
+
+  Note: 'Usuarios de la plataforma (compradores y vendedores).'
+}
+
+Table Role {
+  id    int      [pk, increment, note: 'Identificador del rol']
+  name  varchar  [unique, note: 'Nombre del rol (único)']
+
+  Note: 'Roles del sistema para control de permisos.'
+}
+
+Table Product {
+  id          int           [pk, increment, note: 'Identificador del producto']
+  sellerId    int           [note: 'FK al usuario vendedor']
+  name        varchar       [note: 'Nombre del producto']
+  description varchar       [note: 'Descripción del producto', null]
+  price       decimal(12,2) [note: 'Precio del producto (moneda)']
+  stock       int           [default: 0, note: 'Cantidad disponible en inventario']
+  status      ProductStatus [default: 'ACTIVE', note: 'Estado del producto']
+  createdAt   datetime      [default: `now()`, note: 'Fecha de creación']
+  updatedAt   datetime      [note: 'Fecha de última actualización']
+
+  Indexes {
+    (sellerId)
+    (status)
+  }
+
+  Note: 'Productos publicados por los vendedores.'
+}
+
+Table Category {
+  id            int        [pk, increment, note: 'Identificador de la categoría']
+  name          varchar    [note: 'Nombre de la categoría']
+  parentId      int        [note: 'FK a la categoría padre', null]
+  createdAt     datetime   [default: `now()`, note: 'Fecha de creación']
+  updatedAt     datetime   [note: 'Fecha de última actualización']
+
+  Indexes {
+    (parentId)
+    (parentId, name) [unique]
+  }
+
+  Note: 'Estructura jerárquica de categorías.'
+}
+
+Table ProductCategory {
+  productId  int [note: 'FK al producto']
+  categoryId int [note: 'FK a la categoría']
+
+  Indexes {
+    (productId, categoryId) [pk]
+  }
+
+  Note: 'Tabla pivote producto-categoría (muchos a muchos).'
+}
+
+Table OrderStatus {
+  id          int      [pk, increment, note: 'Identificador del estado de pedido']
+  name        varchar  [note: 'Nombre del estado']
+  description varchar  [note: 'Descripción del estado', null]
+  createdAt   datetime [default: `now()`, note: 'Fecha de creación']
+  updatedAt   datetime [note: 'Fecha de última actualización']
+
+  Note: 'Catálogo de estados de pedidos.'
+}
+
+Table Order {
+  id            int        [pk, increment, note: 'Identificador del pedido']
+  buyerId       int        [note: 'FK al usuario comprador']
+  totalAmount   decimal(12,2) [note: 'Total del pedido (moneda)']
+  orderStatusId int        [note: 'FK al estado del pedido']
+  createdAt     datetime   [default: `now()`, note: 'Fecha de creación']
+  updatedAt     datetime   [note: 'Fecha de última actualización']
+
+  Indexes {
+    (buyerId)
+    (orderStatusId)
+  }
+
+  Note: 'Pedidos de los compradores.'
+}
+
+Table OrderItem {
+  id          int           [pk, increment, note: 'Identificador del ítem del pedido']
+  orderId     int           [note: 'FK al pedido']
+  productId   int           [note: 'FK al producto']
+  sellerId    int           [note: 'FK al vendedor (usuario)']
+  quantity    int           [note: 'Cantidad del producto en el pedido']
+  unitPrice   decimal(12,2) [note: 'Precio unitario al momento de la compra']
+  totalPrice  decimal(12,2) [note: 'Precio total (cantidad x unitPrice)']
+  commission  decimal(12,2) [note: 'Comisión aplicada al ítem']
+
+  Indexes {
+    (orderId)
+    (productId)
+    (sellerId)
+  }
+
+  Note: 'Ítems (líneas) pertenecientes a un pedido.'
+}
+
+Table Transaction {
+  id          int           [pk, increment, note: 'Identificador de la transacción']
+  userId      int           [note: 'FK al usuario dueño de la transacción (vendedor)']
+  orderItemId int           [note: 'FK al ítem del pedido (único)']
+  amount      decimal(12,2) [note: 'Monto de la transacción']
+  commission  decimal(12,2) [note: 'Comisión de la plataforma']
+  tax         decimal(12,2) [default: 0, note: 'Impuestos aplicados']
+  status      TransactionStatus [default: 'PENDING', note: 'Estado de la transacción']
+  createdAt   datetime      [default: `now()`, note: 'Fecha de creación']
+
+  Indexes {
+    (userId)
+    (status)
+    (orderItemId) [unique]
+  }
+
+  Note: 'Transacciones contables por ítem vendido.'
+}
+
+Table RefreshToken {
+  id        int      [pk, increment, note: 'Identificador del token de refresco']
+  userId    int      [note: 'FK al usuario']
+  token     varchar  [unique, note: 'Token de refresco (único)']
+  expiresAt datetime [note: 'Fecha de expiración del token']
+  createdAt datetime [default: `now()`, note: 'Fecha de creación']
+
+  Note: 'Tokens de refresco para sesiones/renovación de JWT.'
+}
+
+Table PasswordReset {
+  id     int     [pk, increment, note: 'Identificador de la solicitud de reseteo']
+  userId int     [note: 'FK al usuario']
+  token  varchar [unique, note: 'Token de restablecimiento (único)']
+
+  Note: 'Tokens para restablecimiento de contraseña.'
+}
+
+Table EmailVerification {
+  id     int     [pk, increment, note: 'Identificador de verificación de email']
+  userId int     [note: 'FK al usuario']
+  token  varchar [unique, note: 'Token de verificación de correo (único)']
+
+  Note: 'Tokens para verificación de correo electrónico.'
+}
+
+Table Cart {
+  id        int      [pk, increment, note: 'Identificador del carrito']
+  userId    int      [unique, note: 'FK al usuario (un carrito por usuario)']
+  createdAt datetime [default: `now()`, note: 'Fecha de creación']
+  updatedAt datetime [note: 'Fecha de última actualización']
+
+  Note: 'Carrito de compras del usuario.'
+}
+
+Table CartItem {
+  id        int  [pk, increment, note: 'Identificador del ítem del carrito']
+  cartId    int  [note: 'FK al carrito']
+  productId int  [note: 'FK al producto']
+  quantity  int  [default: 1, note: 'Cantidad del producto en el carrito']
+
+  Indexes {
+    (cartId, productId) [unique]
+  }
+
+  Note: 'Ítems que componen el carrito de un usuario.'
+}
+
+Table WishlistItem {
+  userId    int [note: 'FK al usuario']
+  productId int [note: 'FK al producto']
+
+  Indexes {
+    (userId, productId) [pk]
+  }
+
+  Note: 'Lista de deseos del usuario (favoritos).'
+}
+
+Table ShippingAddress {
+  id           int      [pk, increment, note: 'Identificador de la dirección']
+  userId       int      [note: 'FK al usuario']
+  addressLine1 varchar  [note: 'Dirección (línea 1)']
+  addressLine2 varchar  [note: 'Dirección (línea 2)', null]
+  city         varchar  [note: 'Ciudad']
+  state        varchar  [note: 'Estado/Provincia', null]
+  postalCode   varchar  [note: 'Código postal', null]
+  country      varchar  [note: 'País']
+  createdAt    datetime [default: `now()`, note: 'Fecha de creación']
+  updatedAt    datetime [note: 'Fecha de última actualización']
+
+  Note: 'Direcciones de envío de los usuarios.'
+}
+
+Table Coupon {
+  id           int         [pk, increment, note: 'Identificador del cupón']
+  code         varchar     [unique, note: 'Código del cupón (único)']
+  discountType DiscountType [note: 'Tipo de descuento']
+  value        float       [note: 'Valor del descuento']
+  usageLimit   int         [note: 'Límite de usos del cupón', null]
+  expiresAt    datetime    [note: 'Fecha de expiración del cupón', null]
+  createdAt    datetime    [default: `now()`, note: 'Fecha de creación']
+
+  Note: 'Cupones de descuento aplicables a pedidos.'
+}
+
+Table OrderCoupon {
+  orderId  int [note: 'FK al pedido']
+  couponId int [note: 'FK al cupón']
+
+  Indexes {
+    (orderId, couponId) [pk]
+  }
+
+  Note: 'Tabla pivote pedido-cupón (aplicación de cupones a pedidos).'
+}
+
+Table Log {
+  id        int      [pk, increment, note: 'Identificador del log']
+  userId    int      [note: 'FK al usuario (puede ser nulo si no aplica)', null]
+  action    varchar  [note: 'Acción realizada']
+  entity    varchar  [note: 'Entidad afectada', null]
+  entityId  int      [note: 'Identificador de la entidad', null]
+  ipAddress varchar  [note: 'Dirección IP', null]
+  userAgent varchar  [note: 'Agente de usuario (navegador/cliente)', null]
+  createdAt datetime [default: `now()`, note: 'Fecha de creación del log']
+
+  Indexes {
+    (userId)
+  }
+
+  Note: 'Bitácora de acciones realizadas por usuarios o el sistema.'
+}
+
+Table Notification {
+  id        int              [pk, increment, note: 'Identificador de la notificación']
+  userId    int              [note: 'FK al usuario destinatario']
+  message   varchar          [note: 'Contenido de la notificación']
+  read      boolean          [default: false, note: 'Leída (true) o pendiente (false)']
+  type      NotificationType [default: 'SYSTEM', note: 'Tipo de notificación']
+  createdAt datetime         [default: `now()`, note: 'Fecha de creación']
+
+  Indexes {
+    (userId, read)
+  }
+
+  Note: 'Notificaciones enviadas a los usuarios.'
+}
+
+Table Message {
+  id         int      [pk, increment, note: 'Identificador del mensaje']
+  senderId   int      [note: 'FK al usuario remitente']
+  receiverId int      [note: 'FK al usuario receptor']
+  content    varchar  [note: 'Contenido del mensaje']
+  read       boolean  [default: false, note: 'Indica si el mensaje fue leído']
+  createdAt  datetime [default: `now()`, note: 'Fecha de envío']
+
+  Note: 'Mensajería entre usuarios.'
+}
+
+Table Rating {
+  id        int      [pk, increment, note: 'Identificador de la calificación']
+  orderId   int      [note: 'FK al pedido calificado']
+  raterId   int      [note: 'FK al usuario que califica']
+  rateeId   int      [note: 'FK al usuario calificado']
+  score     float    [note: 'Puntaje otorgado']
+  comment   varchar  [note: 'Comentario opcional', null]
+  createdAt datetime [default: `now()`, note: 'Fecha de creación']
+
+  Note: 'Calificaciones entre compradores y vendedores por pedido.'
+}
+
+// Relaciones (FK) con reglas de borrado
+Ref: Product.sellerId > User.id
+Ref: User.roleId > Role.id
+Ref: Category.parentId > Category.id [delete: set null]
+Ref: ProductCategory.productId > Product.id [delete: cascade]
+Ref: ProductCategory.categoryId > Category.id [delete: cascade]
+Ref: Order.buyerId > User.id
+Ref: Order.orderStatusId > OrderStatus.id
+Ref: OrderItem.orderId > Order.id
+Ref: OrderItem.productId > Product.id
+Ref: OrderItem.sellerId > User.id
+Ref: Transaction.userId > User.id
+Ref: Transaction.orderItemId > OrderItem.id [delete: cascade]
+Ref: RefreshToken.userId > User.id [delete: cascade]
+Ref: PasswordReset.userId > User.id [delete: cascade]
+Ref: EmailVerification.userId > User.id [delete: cascade]
+Ref: Cart.userId > User.id [delete: cascade]
+Ref: CartItem.cartId > Cart.id [delete: cascade]
+Ref: CartItem.productId > Product.id [delete: cascade]
+Ref: WishlistItem.userId > User.id [delete: cascade]
+Ref: WishlistItem.productId > Product.id [delete: cascade]
+Ref: ShippingAddress.userId > User.id [delete: cascade]
+Ref: OrderCoupon.orderId > Order.id [delete: cascade]
+Ref: OrderCoupon.couponId > Coupon.id [delete: cascade]
+Ref: Log.userId > User.id [delete: set null]
+Ref: Notification.userId > User.id [delete: cascade]
+Ref: Message.senderId > User.id
+Ref: Message.receiverId > User.id
+Ref: Rating.orderId > Order.id
+Ref: Rating.raterId > User.id
+Ref: Rating.rateeId > User.id
