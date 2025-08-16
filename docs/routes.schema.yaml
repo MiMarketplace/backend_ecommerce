@@ -1,0 +1,940 @@
+openapi: 3.1.0
+info:
+  title: Backend Ecommerce - API
+  version: 0.1.0
+  description: |
+    Esquema de rutas (OpenAPI) para el backend de ecommerce.
+    Descripciones en español; modelos y rutas en inglés para consistencia con el código.
+servers:
+  - url: http://localhost:3000
+    description: Local
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+    description: Autenticación y sesiones
+  - name: Users
+    description: Perfil del usuario
+  - name: Addresses
+    description: Direcciones de envío del usuario
+  - name: Products
+    description: Catálogo de productos
+  - name: Categories
+    description: Árbol y listado de categorías
+  - name: ProductComments
+    description: Comentarios simples de productos
+  - name: Cart
+    description: Carrito de compras
+  - name: Wishlist
+    description: Lista de deseos
+  - name: Orders
+    description: Checkout y pedidos
+  - name: Transactions
+    description: Transacciones de venta/pago
+  - name: Notifications
+    description: Notificaciones al usuario
+  - name: Messages
+    description: Mensajería entre usuarios
+  - name: Ratings
+    description: Calificaciones por pedido
+  - name: Seller
+    description: Gestión del vendedor
+  - name: Admin
+    description: Administración (catálogos y moderación)
+
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '201': { description: Usuario creado }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Tokens emitidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refrescar tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: Tokens renovados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Cerrar sesión (revoca refresh token)
+      responses:
+        '200': { description: OK }
+  /auth/verify-email:
+    post:
+      tags: [Auth]
+      summary: Verificar correo con token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token: { type: string }
+      responses:
+        '200': { description: Correo verificado }
+  /auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Solicitar restablecimiento de contraseña
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200': { description: Email enviado si existe }
+  /auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Restablecer contraseña con token
+    
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token: { type: string }
+                password: { type: string, format: password }
+      responses:
+        '200': { description: Contraseña actualizada }
+
+  /me:
+    get:
+      tags: [Users]
+      summary: Obtener perfil
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+    patch:
+      tags: [Users]
+      summary: Actualizar perfil
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+      responses:
+        '200': { description: Perfil actualizado }
+
+  /me/addresses:
+    get:
+      tags: [Addresses]
+      summary: Listar direcciones
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ShippingAddress' }
+    post:
+      tags: [Addresses]
+      summary: Crear dirección
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShippingAddressInput' }
+      responses:
+        '201': { description: Creado }
+  /me/addresses/{id}:
+    patch:
+      tags: [Addresses]
+      summary: Actualizar dirección
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ShippingAddressInput' }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Addresses]
+      summary: Eliminar dirección
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Listar productos
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: categoryId
+          schema: { type: integer }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/Product' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  limit: { type: integer }
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Detalle de producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductDetail' }
+
+  /categories:
+    get:
+      tags: [Categories]
+      summary: Listar categorías
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Category' }
+  /categories/tree:
+    get:
+      tags: [Categories]
+      summary: Árbol de categorías
+      responses:
+        '200': { description: OK }
+
+  /products/{productId}/comments:
+    get:
+      tags: [ProductComments]
+      summary: Listar comentarios del producto
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductComment' }
+    post:
+      tags: [ProductComments]
+      summary: Crear comentario
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId, comment]
+              properties:
+                userId: { type: integer, description: 'En producción se toma del JWT' }
+                comment: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        '201': { description: Creado }
+  /products/{productId}/comments/{commentId}:
+    patch:
+      tags: [ProductComments]
+      summary: Actualizar comentario
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: commentId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                comment: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [ProductComments]
+      summary: Eliminar comentario
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: commentId
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+
+  /cart:
+    get:
+      tags: [Cart]
+      summary: Obtener carrito
+      responses:
+        '200': { description: OK }
+    delete:
+      tags: [Cart]
+      summary: Vaciar carrito
+      responses:
+        '204': { description: OK }
+  /cart/items:
+    post:
+      tags: [Cart]
+      summary: Agregar ítem al carrito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, quantity]
+              properties:
+                productId: { type: integer }
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '201': { description: Agregado }
+  /cart/items/{productId}:
+    patch:
+      tags: [Cart]
+      summary: Actualizar cantidad
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [quantity]
+              properties:
+                quantity: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Cart]
+      summary: Eliminar del carrito
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+
+  /wishlist:
+    get:
+      tags: [Wishlist]
+      summary: Listar wishlist
+      responses:
+        '200': { description: OK }
+  /wishlist/{productId}:
+    post:
+      tags: [Wishlist]
+      summary: Agregar a wishlist
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      responses:
+        '201': { description: Agregado }
+    delete:
+      tags: [Wishlist]
+      summary: Quitar de wishlist
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+
+  /checkout:
+    post:
+      tags: [Orders]
+      summary: Crear pedido desde carrito
+      responses:
+        '201': { description: Pedido creado }
+  /orders:
+    get:
+      tags: [Orders]
+      summary: Listar pedidos del usuario
+      responses:
+        '200': { description: OK }
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Detalle de pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Cancelar pedido (si aplica)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Cancelado }
+  /orders/{id}/coupons:
+    post:
+      tags: [Orders]
+      summary: Aplicar cupón al pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        '200': { description: Aplicado }
+  /orders/{id}/coupons/{code}:
+    delete:
+      tags: [Orders]
+      summary: Quitar cupón del pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: code
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: Quitado }
+
+  /transactions:
+    get:
+      tags: [Transactions]
+      summary: Listar transacciones del usuario
+      responses:
+        '200': { description: OK }
+  /transactions/{id}:
+    get:
+      tags: [Transactions]
+      summary: Detalle de transacción
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /webhooks/payments:
+    post:
+      tags: [Transactions]
+      summary: Webhook de pagos (proveedor externo)
+      responses:
+        '200': { description: OK }
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Listar notificaciones
+      responses:
+        '200': { description: OK }
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Marcar como leída
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /notifications/read-all:
+    patch:
+      tags: [Notifications]
+      summary: Marcar todas como leídas
+      responses:
+        '200': { description: OK }
+
+  /conversations:
+    get:
+      tags: [Messages]
+      summary: Listar conversaciones
+      responses:
+        '200': { description: OK }
+  /conversations/{userId}/messages:
+    get:
+      tags: [Messages]
+      summary: Mensajes con un usuario
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /messages:
+    post:
+      tags: [Messages]
+      summary: Enviar mensaje
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receiverId, content]
+              properties:
+                receiverId: { type: integer }
+                content: { type: string }
+      responses:
+        '201': { description: Enviado }
+  /messages/{id}/read:
+    patch:
+      tags: [Messages]
+      summary: Marcar mensaje como leído
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  /orders/{id}/ratings:
+    post:
+      tags: [Ratings]
+      summary: Calificar pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [score]
+              properties:
+                score: { type: number, minimum: 1, maximum: 5 }
+                comment: { type: string }
+      responses:
+        '201': { description: Creado }
+  /users/{id}/ratings:
+    get:
+      tags: [Ratings]
+      summary: Listar calificaciones de un usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /orders/{id}/rating:
+    get:
+      tags: [Ratings]
+      summary: Obtener calificación de un pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+
+  # Rutas Seller (vendedor)
+  /seller/products:
+    get:
+      tags: [Seller]
+      summary: Listar productos del vendedor
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Seller]
+      summary: Crear producto
+      responses:
+        '201': { description: Creado }
+  /seller/products/{id}:
+    get:
+      tags: [Seller]
+      summary: Detalle de producto del vendedor
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+    patch:
+      tags: [Seller]
+      summary: Actualizar producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Seller]
+      summary: Eliminar producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+  /seller/products/{id}/status:
+    patch:
+      tags: [Seller]
+      summary: Cambiar estado del producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /seller/products/{id}/stock:
+    patch:
+      tags: [Seller]
+      summary: Actualizar stock del producto
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+  /seller/order-items:
+    get:
+      tags: [Seller]
+      summary: Ítems vendidos por el vendedor
+      responses:
+        '200': { description: OK }
+
+  # Rutas Admin
+  /admin/categories:
+    get:
+      tags: [Admin]
+      summary: Listar categorías
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Admin]
+      summary: Crear categoría
+      responses:
+        '201': { description: Creado }
+  /admin/categories/{id}:
+    patch:
+      tags: [Admin]
+      summary: Actualizar categoría
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Admin]
+      summary: Eliminar categoría
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+  /admin/coupons:
+    get:
+      tags: [Admin]
+      summary: Listar cupones
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Admin]
+      summary: Crear cupón
+      responses:
+        '201': { description: Creado }
+  /admin/coupons/{id}:
+    patch:
+      tags: [Admin]
+      summary: Actualizar cupón
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Admin]
+      summary: Eliminar cupón
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+  /admin/order-status:
+    get:
+      tags: [Admin]
+      summary: Listar estados de pedido
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Admin]
+      summary: Crear estado de pedido
+      responses:
+        '201': { description: Creado }
+  /admin/order-status/{id}:
+    patch:
+      tags: [Admin]
+      summary: Actualizar estado de pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+    delete:
+      tags: [Admin]
+      summary: Eliminar estado de pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '204': { description: Eliminado }
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: Listar usuarios
+      responses:
+        '200': { description: OK }
+  /admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Actualizar datos/rol de usuario
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+  /admin/orders/{id}/status:
+    patch:
+      tags: [Admin]
+      summary: Actualizar estado de un pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Actualizado }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthTokens:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        price: { type: number, format: decimal }
+        stock: { type: integer }
+        status: { type: string, enum: [ACTIVE, INACTIVE] }
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+        - type: object
+          properties:
+            seller:
+              type: object
+              properties:
+                id: { type: integer }
+                name: { type: string }
+            categories:
+              type: array
+              items:
+                type: object
+                properties:
+                  category:
+                    $ref: '#/components/schemas/Category'
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        parentId: { type: integer, nullable: true }
+    ProductComment:
+      type: object
+      properties:
+        id: { type: integer }
+        productId: { type: integer }
+        userId: { type: integer }
+        comment: { type: string }
+        createdAt: { type: string, format: date-time }
+    ShippingAddress:
+      type: object
+      properties:
+        id: { type: integer }
+        addressLine1: { type: string }
+        addressLine2: { type: string, nullable: true }
+        city: { type: string }
+        state: { type: string, nullable: true }
+        postalCode: { type: string, nullable: true }
+        country: { type: string }
+    ShippingAddressInput:
+      type: object
+      properties:
+        addressLine1: { type: string }
+        addressLine2: { type: string, nullable: true }
+        city: { type: string }
+        state: { type: string, nullable: true }
+        postalCode: { type: string, nullable: true }
+        country: { type: string }

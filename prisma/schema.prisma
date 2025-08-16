@@ -14,59 +14,63 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id                   Int                    @id @default(autoincrement())
-  name                 String
-  email                String                 @unique
-  password             String
-  score                Float                  @default(0)
-  emailVerified        Boolean                @default(false)
-  roleId               Int
-  role                 Role                   @relation(fields: [roleId], references: [id])
-  products             Product[]              @relation("SellerProducts")
-  orders               Order[]                @relation("BuyerOrders")
-  refreshTokens        RefreshToken[]
-  passwordResets       PasswordReset[]
-  emailVerifications   EmailVerification[]
-  shippingAddresses    ShippingAddress[]
-  cart                 Cart?
-  wishlist             WishlistItem[]
-  transactions         Transaction[]
-  logs                 Log[]
-  notifications        Notification[]
-  messagesSent         Message[]              @relation("MessagesSent")
-  messagesReceived     Message[]              @relation("MessagesReceived")
-  ratingsReceived      Rating[]               @relation("RatingsReceived")
-  ratingsGiven         Rating[]               @relation("RatingsGiven")
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  password           String
+  score              Float               @default(0)
+  emailVerified      Boolean             @default(false)
+  roleId             Int
+  phone              Int
+  role               Role                @relation(fields: [roleId], references: [id])
+  products           Product[]           @relation("SellerProducts")
+  orders             Order[]             @relation("BuyerOrders")
+  refreshTokens      RefreshToken[]
+  passwordResets     PasswordReset[]
+  emailVerifications EmailVerification[]
+  shippingAddresses  ShippingAddress[]
+  cart               Cart?
+  wishlist           WishlistItem[]
+  transactions       Transaction[]
+  logs               Log[]
+  notifications      Notification[]
+  messagesSent       Message[]           @relation("MessagesSent")
+  messagesReceived   Message[]           @relation("MessagesReceived")
+  ratingsReceived    Rating[]            @relation("RatingsReceived")
+  ratingsGiven       Rating[]            @relation("RatingsGiven")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
-  orderItemsSold       OrderItem[]
+  orderItemsSold OrderItem[]
+
+  // Comentarios de productos hechos por este usuario
+  productComments ProductComment[]
 }
 
 model Role {
-  id       Int     @id @default(autoincrement())
-  name     String  @unique
-  users    User[]
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
 }
 
 model Product {
-  id          Int        @id @default(autoincrement())
-  seller      User       @relation("SellerProducts", fields: [sellerId], references: [id])
+  id          Int               @id @default(autoincrement())
+  seller      User              @relation("SellerProducts", fields: [sellerId], references: [id])
   sellerId    Int
   name        String
   description String?
-  price       Decimal    @db.Decimal(12, 2)
-  stock       Int        @default(0)
-  status      ProductStatus @default(ACTIVE)
+  price       Decimal           @db.Decimal(12, 2)
+  stock       Int               @default(0)
+  status      ProductStatus     @default(ACTIVE)
   categories  ProductCategory[]
   orderItems  OrderItem[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-  cartItems      CartItem[]
-  wishlistItems  WishlistItem[]
+  cartItems     CartItem[]
+  wishlistItems WishlistItem[]
+  comments      ProductComment[]
 
   @@index([sellerId])
   @@index([status])
@@ -78,17 +82,17 @@ enum ProductStatus {
 }
 
 model Category {
-  id            Int        @id @default(autoincrement())
+  id            Int               @id @default(autoincrement())
   name          String
   parentId      Int?
-  parent        Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
-  subCategories Category[] @relation("SubCategories")
+  parent        Category?         @relation("SubCategories", fields: [parentId], references: [id], onDelete: SetNull)
+  subCategories Category[]        @relation("SubCategories")
   products      ProductCategory[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
-  @@index([parentId])
   @@unique([parentId, name])
+  @@index([parentId])
 }
 
 model ProductCategory {
@@ -96,6 +100,7 @@ model ProductCategory {
   productId  Int
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId Int
+
   @@id([productId, categoryId])
 }
 
@@ -109,34 +114,34 @@ model OrderStatus {
 }
 
 model Order {
-  id            Int        @id @default(autoincrement())
-  buyer         User       @relation("BuyerOrders", fields: [buyerId], references: [id])
+  id            Int           @id @default(autoincrement())
+  buyer         User          @relation("BuyerOrders", fields: [buyerId], references: [id])
   buyerId       Int
-  totalAmount   Decimal    @db.Decimal(12, 2)
-  orderStatus   OrderStatus @relation(fields: [orderStatusId], references: [id])
+  totalAmount   Decimal       @db.Decimal(12, 2)
+  orderStatus   OrderStatus   @relation(fields: [orderStatusId], references: [id])
   orderStatusId Int
   orderItems    OrderItem[]
   coupons       OrderCoupon[]
   ratings       Rating[]
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([buyerId])
   @@index([orderStatusId])
 }
 
 model OrderItem {
-  id          Int      @id @default(autoincrement())
-  order       Order    @relation(fields: [orderId], references: [id])
+  id          Int          @id @default(autoincrement())
+  order       Order        @relation(fields: [orderId], references: [id])
   orderId     Int
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product      @relation(fields: [productId], references: [id])
   productId   Int
-  seller      User     @relation(fields: [sellerId], references: [id])
+  seller      User         @relation(fields: [sellerId], references: [id])
   sellerId    Int
   quantity    Int
-  unitPrice   Decimal   @db.Decimal(12, 2)
-  totalPrice  Decimal   @db.Decimal(12, 2)
-  commission  Decimal   @db.Decimal(12, 2)
+  unitPrice   Decimal      @db.Decimal(12, 2)
+  totalPrice  Decimal      @db.Decimal(12, 2)
+  commission  Decimal      @db.Decimal(12, 2)
   transaction Transaction?
 
   @@index([orderId])
@@ -145,16 +150,16 @@ model OrderItem {
 }
 
 model Transaction {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id])
+  id          Int               @id @default(autoincrement())
+  user        User              @relation(fields: [userId], references: [id])
   userId      Int
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  orderItemId Int @unique
-  amount      Decimal   @db.Decimal(12, 2)
-  commission  Decimal   @db.Decimal(12, 2)
-  tax         Decimal   @db.Decimal(12, 2) @default(0)
+  orderItem   OrderItem         @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId Int               @unique
+  amount      Decimal           @db.Decimal(12, 2)
+  commission  Decimal           @db.Decimal(12, 2)
+  tax         Decimal           @default(0) @db.Decimal(12, 2)
   status      TransactionStatus @default(PENDING)
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime          @default(now())
 
   @@index([userId])
   @@index([status])
@@ -167,35 +172,35 @@ enum TransactionStatus {
 }
 
 model RefreshToken {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
-  token      String   @unique
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 model PasswordReset {
-  id     Int   @id @default(autoincrement())
-  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
   token  String @unique
 }
 
 model EmailVerification {
-  id     Int   @id @default(autoincrement())
-  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int    @id @default(autoincrement())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
   token  String @unique
 }
 
 model Cart {
-  id        Int       @id @default(autoincrement())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int @unique
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int        @unique
   items     CartItem[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model CartItem {
@@ -214,31 +219,32 @@ model WishlistItem {
   userId    Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId Int
+
   @@id([userId, productId])
 }
 
 model ShippingAddress {
-  id          Int    @id @default(autoincrement())
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
+  id           Int      @id @default(autoincrement())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
   addressLine1 String
   addressLine2 String?
-  city        String
-  state       String?
-  postalCode  String?
-  country     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  city         String
+  state        String?
+  postalCode   String?
+  country      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Coupon {
-  id          Int       @id @default(autoincrement())
-  code        String    @unique
+  id           Int          @id @default(autoincrement())
+  code         String       @unique
   discountType DiscountType
-  value       Float
-  usageLimit  Int?
-  expiresAt   DateTime?
-  createdAt   DateTime @default(now())
+  value        Float
+  usageLimit   Int?
+  expiresAt    DateTime?
+  createdAt    DateTime     @default(now())
 
   OrderCoupon OrderCoupon[]
 }
@@ -253,31 +259,32 @@ model OrderCoupon {
   orderId  Int
   coupon   Coupon @relation(fields: [couponId], references: [id], onDelete: Cascade)
   couponId Int
+
   @@id([orderId, couponId])
 }
 
 model Log {
-  id         Int      @id @default(autoincrement())
-  userId     Int?     
-  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action     String
-  entity     String?
-  entityId   Int?
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String?
+  entityId  Int?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId])
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int              @id @default(autoincrement())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   message   String
-  read      Boolean  @default(false)
+  read      Boolean          @default(false)
   type      NotificationType @default(SYSTEM)
-  createdAt DateTime @default(now())
+  createdAt DateTime         @default(now())
 
   @@index([userId, read])
 }
@@ -290,25 +297,40 @@ enum NotificationType {
 }
 
 model Message {
-  id          Int      @id @default(autoincrement())
-  sender      User     @relation("MessagesSent", fields: [senderId], references: [id])
-  senderId    Int
-  receiver    User     @relation("MessagesReceived", fields: [receiverId], references: [id])
-  receiverId  Int
-  content     String
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  sender     User     @relation("MessagesSent", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User     @relation("MessagesReceived", fields: [receiverId], references: [id])
+  receiverId Int
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }
 
 model Rating {
-  id          Int      @id @default(autoincrement())
-  order       Order    @relation(fields: [orderId], references: [id])
-  orderId     Int
-  rater       User     @relation("RatingsGiven", fields: [raterId], references: [id])
-  raterId     Int
-  ratee       User     @relation("RatingsReceived", fields: [rateeId], references: [id])
-  rateeId     Int
-  score       Float
-  comment     String?
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   Int
+  rater     User     @relation("RatingsGiven", fields: [raterId], references: [id])
+  raterId   Int
+  ratee     User     @relation("RatingsReceived", fields: [rateeId], references: [id])
+  rateeId   Int
+  score     Float
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+// Comentarios simples de productos (sin requerir compra verificada)
+model ProductComment {
+  id        Int      @id @default(autoincrement())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  comment   String // texto del comentario
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, createdAt])
+  @@index([userId])
 }

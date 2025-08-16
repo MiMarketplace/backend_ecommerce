@@ -308,6 +308,22 @@ Table Rating {
   Note: 'Calificaciones entre compradores y vendedores por pedido.'
 }
 
+Table ProductComment {
+  id         int      [pk, increment, note: 'Identificador del comentario']
+  productId  int      [note: 'FK al producto comentado']
+  userId     int      [note: 'FK al usuario que comenta']
+  comment    varchar  [note: 'Texto del comentario']
+  createdAt  datetime [default: `now()`, note: 'Fecha de creación']
+  updatedAt  datetime [note: 'Fecha de última actualización']
+
+  Indexes {
+    (productId, createdAt)
+    (userId)
+  }
+
+  Note: 'Comentarios simples de productos.'
+}
+
 // Relaciones (FK) con reglas de borrado
 Ref: Product.sellerId > User.id
 Ref: User.roleId > Role.id
@@ -339,3 +355,5 @@ Ref: Message.receiverId > User.id
 Ref: Rating.orderId > Order.id
 Ref: Rating.raterId > User.id
 Ref: Rating.rateeId > User.id
+Ref: ProductComment.productId > Product.id [delete: cascade]
+Ref: ProductComment.userId > User.id [delete: cascade]
