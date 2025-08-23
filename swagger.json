@@ -1,0 +1,31 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/hello": {
+      "get": {
+        "operationId": "HelloController_getHello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Devuelve un Hola Mundo",
+        "tags": [
+          "Hello"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Ecommerce API",
+    "description": "API de ejemplo para e-commerce",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "schemas": {}
+  }
+}
